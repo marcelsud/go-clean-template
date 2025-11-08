@@ -1,4 +1,4 @@
-.PHONY: help tests test-unit test-integration generate-mocks run-postgres stop-postgres cli-postgres migrate-up migrate-down benchmark
+.PHONY: help tests test-unit test-integration generate-mocks run-postgres stop-postgres cli-postgres migrate-up migrate-down benchmark ssh-machine-start ssh-machine-stop ssh-machine-connect ssh-machine-clean
 
 help:
 	@echo "╔════════════════════════════════════════════════════════════╗"
@@ -19,6 +19,12 @@ help:
 	@echo "Migrations:"
 	@echo "  make migrate-up         - Apply database migrations"
 	@echo "  make migrate-down       - Rollback database migrations"
+	@echo ""
+	@echo "SSH Docker Machine:"
+	@echo "  make ssh-machine-start  - Start SSH-enabled Docker machine"
+	@echo "  make ssh-machine-stop   - Stop SSH-enabled Docker machine"
+	@echo "  make ssh-machine-connect - Connect to SSH Docker machine"
+	@echo "  make ssh-machine-clean  - Stop and remove SSH Docker machine"
 	@echo ""
 	@echo "Other:"
 	@echo "  make generate-mocks     - Generate mocks from interfaces"
@@ -78,3 +84,32 @@ migrate-down:
 	@echo "Reverting migrations..."
 	@docker-compose exec -T postgres psql -U postgres -d books -f /docker-entrypoint-initdb.d/001_create_books_table.down.sql
 	@echo "✅ Migrations reverted!"
+
+# SSH Docker Machine targets
+ssh-machine-start:
+	@echo "Building and starting SSH Docker machine..."
+	@docker-compose -f docker-compose.ssh-machine.yml up -d --build
+	@echo "Waiting for SSH to be ready..."
+	@sleep 5
+	@echo "✅ SSH Docker machine is running!"
+	@echo ""
+	@echo "Connect using:"
+	@echo "  ssh sshuser@localhost -p 2222"
+	@echo "  Password: password"
+	@echo ""
+	@echo "Or run: make ssh-machine-connect"
+
+ssh-machine-stop:
+	@echo "Stopping SSH Docker machine..."
+	@docker-compose -f docker-compose.ssh-machine.yml stop
+	@echo "✅ SSH Docker machine stopped!"
+
+ssh-machine-connect:
+	@echo "Connecting to SSH Docker machine..."
+	@echo "Password: password"
+	@ssh -o StrictHostKeyChecking=no sshuser@localhost -p 2222
+
+ssh-machine-clean:
+	@echo "Stopping and removing SSH Docker machine..."
+	@docker-compose -f docker-compose.ssh-machine.yml down -v
+	@echo "✅ SSH Docker machine cleaned!"

@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  ssh-docker-machine:
+    build:
+      context: .
+      dockerfile: Dockerfile.ssh-docker
+    container_name: ssh-docker-machine
+    privileged: true
+    ports:
+      - "2222:22"  # SSH access on port 2222
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Share host Docker socket (optional)
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    restart: unless-stopped

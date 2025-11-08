@@ -1,4 +1,4 @@
-.PHONY: help tests test-unit test-integration generate-mocks run-postgres stop-postgres cli-postgres migrate-up migrate-down benchmark ssh-machine-start ssh-machine-stop ssh-machine-connect ssh-machine-clean
+.PHONY: help tests test-unit test-integration generate-mocks run-postgres stop-postgres cli-postgres migrate-up migrate-down benchmark ssh-machine-start ssh-machine-stop ssh-machine-connect ssh-machine-clean fly-machine-deploy fly-machine-console fly-machine-status fly-machine-logs fly-machine-destroy
 
 help:
 	@echo "╔════════════════════════════════════════════════════════════╗"
@@ -20,11 +20,18 @@ help:
 	@echo "  make migrate-up         - Apply database migrations"
 	@echo "  make migrate-down       - Rollback database migrations"
 	@echo ""
-	@echo "SSH Docker Machine:"
+	@echo "SSH Docker Machine (Local):"
 	@echo "  make ssh-machine-start  - Start SSH-enabled Docker machine"
 	@echo "  make ssh-machine-stop   - Stop SSH-enabled Docker machine"
 	@echo "  make ssh-machine-connect - Connect to SSH Docker machine"
 	@echo "  make ssh-machine-clean  - Stop and remove SSH Docker machine"
+	@echo ""
+	@echo "Fly.io Machine (Remote):"
+	@echo "  make fly-machine-deploy - Deploy Ubuntu+Docker machine to Fly.io"
+	@echo "  make fly-machine-console - Connect via fly ssh console"
+	@echo "  make fly-machine-status - Check machine status"
+	@echo "  make fly-machine-logs   - View machine logs"
+	@echo "  make fly-machine-destroy - Destroy Fly.io app and resources"
 	@echo ""
 	@echo "Other:"
 	@echo "  make generate-mocks     - Generate mocks from interfaces"
@@ -113,3 +120,42 @@ ssh-machine-clean:
 	@echo "Stopping and removing SSH Docker machine..."
 	@docker-compose -f docker-compose.ssh-machine.yml down -v
 	@echo "✅ SSH Docker machine cleaned!"
+
+# Fly.io Machine targets
+FLY_APP_NAME ?= go-clean-template-ssh-machine
+FLYCTL_INSTALL ?= /root/.fly
+FLYCTL ?= $(FLYCTL_INSTALL)/bin/flyctl
+
+fly-machine-deploy:
+	@command -v $(FLYCTL) >/dev/null 2>&1 || { echo "❌ Fly.io CLI is not installed. Run the installer first."; exit 1; }
+	@echo "Deploying Fly.io machine..."
+	@if ! $(FLYCTL) status -a $(FLY_APP_NAME) >/dev/null 2>&1; then \
+		echo "App does not exist. Creating..."; \
+		$(FLYCTL) launch --now --name $(FLY_APP_NAME) --region mia --copy-config --yes; \
+	else \
+		echo "App exists. Deploying..."; \
+		$(FLYCTL) deploy; \
+	fi
+	@echo "✅ Fly.io machine deployed!"
+	@echo ""
+	@echo "Connect using: make fly-machine-console"
+
+fly-machine-console:
+	@command -v $(FLYCTL) >/dev/null 2>&1 || { echo "❌ Fly.io CLI is not installed"; exit 1; }
+	@echo "Connecting to Fly.io machine via SSH..."
+	@$(FLYCTL) ssh console -a $(FLY_APP_NAME)
+
+fly-machine-status:
+	@command -v $(FLYCTL) >/dev/null 2>&1 || { echo "❌ Fly.io CLI is not installed"; exit 1; }
+	@$(FLYCTL) status -a $(FLY_APP_NAME)
+
+fly-machine-logs:
+	@command -v $(FLYCTL) >/dev/null 2>&1 || { echo "❌ Fly.io CLI is not installed"; exit 1; }
+	@$(FLYCTL) logs -a $(FLY_APP_NAME)
+
+fly-machine-destroy:
+	@command -v $(FLYCTL) >/dev/null 2>&1 || { echo "❌ Fly.io CLI is not installed"; exit 1; }
+	@echo "⚠️  This will destroy the app and all resources!"
+	@read -p "Are you sure? (yes/no): " confirm && [ "$$confirm" = "yes" ] || { echo "Cancelled."; exit 1; }
+	@$(FLYCTL) apps destroy $(FLY_APP_NAME) --yes
+	@echo "✅ Fly.io app destroyed!"

@@ -1,37 +1,38 @@
-# fly.toml app configuration file
+# fly.toml app configuration file generated for go-clean-template-ssh-machine on 2025-11-08T13:48:02Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "go-clean-template-ssh-machine"
-primary_region = "mia"
+app = 'go-clean-template-ssh-machine'
+primary_region = 'iad'
 
 [build]
-  dockerfile = "Dockerfile.fly"
+  dockerfile = 'Dockerfile.fly'
 
 [env]
-  PORT = "8080"
+  PORT = '8080'
 
 [[services]]
+  protocol = 'tcp'
   internal_port = 8080
-  protocol = "tcp"
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
 
   [[services.ports]]
     port = 80
-    handlers = ["http"]
+    handlers = ['http']
 
   [[services.ports]]
     port = 443
-    handlers = ["tls", "http"]
+    handlers = ['tls', 'http']
 
   [services.concurrency]
-    type = "connections"
+    type = 'connections'
     hard_limit = 25
     soft_limit = 20
 
 [[vm]]
-  memory = "1gb"
-  cpu_kind = "shared"
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1

@@ -131,7 +131,7 @@ fly-machine-deploy:
 	@echo "Deploying Fly.io machine..."
 	@if ! $(FLYCTL) status -a $(FLY_APP_NAME) >/dev/null 2>&1; then \
 		echo "App does not exist. Creating..."; \
-		$(FLYCTL) launch --now --name $(FLY_APP_NAME) --region mia --copy-config --yes; \
+		$(FLYCTL) launch --now --name $(FLY_APP_NAME) --region iad --copy-config --yes; \
 	else \
 		echo "App exists. Deploying..."; \
 		$(FLYCTL) deploy; \
